@@ -1,8 +1,8 @@
 local M = {}
 
 local config = {
-	max_tweet_length = 190, -- Maximum characters per tweet
-	counter_format = "(%d/%d) ", -- Format for the tweet counter
+	max_tweet_length = 195, -- Maximum characters per tweet
+	counter_format = "[%d/%d] ", -- Format for the tweet counter
 }
 
 local function split_into_tweets(text)
@@ -106,7 +106,6 @@ local function format_tweets_with_counters(tweets)
 	return formatted_tweets
 end
 
--- Main function to process selected text
 function M.format_x_threads()
 	local start_pos = vim.fn.getpos("'<")
 	local end_pos = vim.fn.getpos("'>")
