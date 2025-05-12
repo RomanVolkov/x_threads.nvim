@@ -1,94 +1,38 @@
 local M = {}
 
 local config = {
-	max_tweet_length = 195, -- Maximum characters per tweet
-	counter_format = "[%d/%d] ", -- Format for the tweet counter
+	max_tweet_length = 190,
+	counter_format = "[%d/%d] ",
 }
 
 local function split_into_tweets(text)
 	text = text:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
 
+	local sentences = {}
+	for sentence in text:gmatch("[^%.!?]+[%.!?]") do
+		local trimmed_sentence = sentence:gsub("^%s+", ""):gsub("%s+$", "")
+		sentences[#sentences + 1] = trimmed_sentence
+	end
+
 	local tweets = {}
 	local current_tweet = ""
-	local remaining_text = text
 
-	while #remaining_text > 0 do
-		local next_end = nil
-		local next_pattern = nil
+	for _, sentence in ipairs(sentences) do
+		local tweet_length_with_counter = config.max_tweet_length - #string.format(config.counter_format, 1, 1)
+		local potential_tweet = (current_tweet ~= "" and current_tweet .. " " or "") .. sentence
 
-		for _, pattern in ipairs({ "%.%s", "!%s", "?%s", "%.%.%.%s", "%.$", "!$", "?$", "%.%.%.$" }) do
-			local pos = remaining_text:find(pattern)
-			if pos and (next_end == nil or pos < next_end) then
-				next_end = pos
-				next_pattern = pattern
+		if #potential_tweet > tweet_length_with_counter then
+			if current_tweet ~= "" then
+				tweets[#tweets + 1] = current_tweet
 			end
-		end
-
-		if next_end == nil then
-			if #current_tweet + #remaining_text <= config.max_tweet_length - 7 then
-				current_tweet = current_tweet .. remaining_text
-				remaining_text = ""
-			else
-				local space_pos = nil
-				local remaining_length = config.max_tweet_length - #current_tweet - 7 -- accounting for counter
-
-				if #current_tweet > 0 then
-					space_pos = remaining_text:sub(1, remaining_length):find("%s[^%s]*$")
-				else
-					remaining_length = config.max_tweet_length - 7 -- accounting for counter
-					space_pos = remaining_text:sub(1, remaining_length):find("%s[^%s]*$")
-
-					if space_pos == nil then
-						space_pos = remaining_length
-					end
-				end
-
-				if space_pos then
-					current_tweet = current_tweet .. remaining_text:sub(1, space_pos)
-					table.insert(tweets, current_tweet)
-					current_tweet = ""
-					remaining_text = remaining_text:sub(space_pos + 1):gsub("^%s+", "")
-				else
-					table.insert(tweets, current_tweet .. remaining_text:sub(1, remaining_length))
-					current_tweet = ""
-					remaining_text = remaining_text:sub(remaining_length + 1):gsub("^%s+", "")
-				end
-			end
+			current_tweet = sentence
 		else
-			local sentence = remaining_text:sub(1, next_end + #next_pattern - 1)
-
-			if #current_tweet + #sentence <= config.max_tweet_length - 7 then
-				current_tweet = current_tweet .. sentence
-				remaining_text = remaining_text:sub(next_end + #next_pattern):gsub("^%s+", "")
-			else
-				if #current_tweet > 0 then
-					table.insert(tweets, current_tweet)
-					current_tweet = sentence
-					remaining_text = remaining_text:sub(next_end + #next_pattern):gsub("^%s+", "")
-				else
-					local space_pos = nil
-					local remaining_length = config.max_tweet_length - 7 -- accounting for counter
-					space_pos = sentence:sub(1, remaining_length):find("%s[^%s]*$")
-
-					if space_pos and space_pos > 0 then
-						current_tweet = sentence:sub(1, space_pos)
-						table.insert(tweets, current_tweet)
-						current_tweet = ""
-						remaining_text = sentence:sub(space_pos + 1):gsub("^%s+", "")
-							.. remaining_text:sub(next_end + #next_pattern)
-					else
-						table.insert(tweets, sentence:sub(1, remaining_length))
-						current_tweet = ""
-						remaining_text = sentence:sub(remaining_length + 1):gsub("^%s+", "")
-							.. remaining_text:sub(next_end + #next_pattern)
-					end
-				end
-			end
+			current_tweet = potential_tweet
 		end
+	end
 
-		if #current_tweet > 0 and #remaining_text == 0 then
-			table.insert(tweets, current_tweet)
-		end
+	if current_tweet ~= "" then
+		tweets[#tweets + 1] = current_tweet
 	end
 
 	return tweets
@@ -155,5 +99,13 @@ function M.setup(opts)
 
 	return M
 end
+
+-- local test =
+-- 	"This is a very long piece of text that needs to be split into multiple tweets for a coherent thread. The plugin will automatically handle breaking the text into manageable chunks while preserving the overall meaning and readability. This is a very long piece of text that needs to be split into multiple tweets for a coherent thread. The plugin will automatically handle breaking the text into manageable chunks while preserving the overall meaning and readability."
+--
+-- local res = split_into_tweets(test)
+-- print(res)
+--
+-- vim.api.nvim_buf_set_lines(0, 198, 198 + 1, false, res)
 
 return M
