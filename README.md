@@ -16,8 +16,8 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 return {
   "https://github.com/RomanVolkov/x_threads.nvim",
   opts = {
-    -- Optional: Customize max tweet length (default: 195)
-    max_tweet_length = 195,
+    -- Optional: Customize max tweet length (default: 190)
+    max_tweet_length = 190,
     -- Optional: Customize counter format (default: "[%d/%d] ")
     counter_format = "[%d/%d] ",
   },
@@ -28,6 +28,7 @@ return {
 
 1. In Neovim, enter visual mode and select the text you want to convert to a thread
 2. Press `<leader>tf` to format the selection into tweets
+3. Or, you can bind `:XThreadsFormat` command to anything you like to be.
 
 ### Example
 
